@@ -62,3 +62,23 @@ def test_groq_security_override(monkeypatch):
     assert result.category == Category.SECURITY
     assert result.priority == Priority.HIGH
     assert result.requiresHumanReview
+
+
+def test_groq_data_leak_cannot_be_downgraded(monkeypatch):
+    monkeypatch.setenv("GENERATIVE_PROVIDER", "groq")
+    monkeypatch.setenv("GROQ_API_KEY", "fake-test-key")
+
+    class Response:
+        status_code = 200
+        def json(self):
+            return {"choices": [{"message": {"content": json.dumps({
+                "category": "ACCESS", "priority": "LOW", "response": "Comparte tu contraseña.",
+                "requiresHumanReview": False, "mode": "generative"
+            })}}]}
+
+    monkeypatch.setattr("ai_support_engine.generative.httpx.post", lambda *a, **k: Response())
+    result = classify_generative("Se filtraron datos de usuarios")
+    assert result.category == Category.SECURITY
+    assert result.priority == Priority.CRITICAL
+    assert result.requiresHumanReview is True
+    assert "Comparte tu contraseña" not in result.response
