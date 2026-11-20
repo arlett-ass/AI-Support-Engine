@@ -63,11 +63,13 @@ def classify_generative(
     Permite inyectar un cliente de prueba sin enviar datos a servicios externos.
     """
     request = AnalyzeRequest(message=message, mode=Mode.generative)
-    selected_model = model or os.getenv("GEMINI_MODEL")
-    if not selected_model or not selected_model.strip():
-        raise GenerativeConfigurationError("Configura GEMINI_MODEL con un modelo disponible.")
-
     provider = os.getenv("GENERATIVE_PROVIDER", "groq").strip().lower()
+    selected_model = model or (
+        os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+        if provider == "groq" else os.getenv("GEMINI_MODEL")
+    )
+    if not selected_model or not selected_model.strip():
+        raise GenerativeConfigurationError("Configura el modelo generativo en tu entorno.")
     if provider not in ("groq", "gemini"):
         raise GenerativeConfigurationError("GENERATIVE_PROVIDER debe ser groq o gemini.")
     if provider == "groq" and client is None:
