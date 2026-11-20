@@ -1,5 +1,12 @@
 # AI Support Engine
 
+## Integrantes
+
+- Angelica Arlett Santiago Serrano
+- Nicolás David Juarez Mendoza
+- Victor Manual Jimenez Suarez
+
+
 Prototipo académico de clasificación de tickets de soporte con dos modos: **traditional** (reglas deterministas) y **generative** (modelo de lenguaje por API). No necesita base de datos, GPU ni interfaz web.
 
 ## Instalación en Linux
@@ -58,3 +65,7 @@ El motor tradicional depende de palabras clave. El generativo depende de la disp
 ## Conclusión
 
 El motor tradicional permite clasificar solicitudes frecuentes de manera rápida, consistente y sin depender de internet. El generativo ofrece respuestas más flexibles y puede interpretar mensajes variados, pero depende de un proveedor externo y de sus límites de acceso. La comparación utiliza casos sintéticos reproducibles para observar diferencias, sin presentar esas observaciones como una medición definitiva de precisión. Los incidentes de seguridad y los mensajes ambiguos requieren especial cuidado y revisión humana. La validación de entrada, el formato JSON y las pruebas automatizadas ayudan a mantener el contrato de la API; aun así, el prototipo no sustituye a un sistema de soporte supervisado.
+
+## Evidencia final de pruebas
+
+En la ejecución reportada por el equipo: **55 pruebas aprobadas**, **1 advertencia de deprecación de Starlette** y **11 casos de comparación ejecutados**. La advertencia no representa una prueba fallida. En la comparación, los dos motores coincidieron en la categoría de 10 de los 11 mensajes; el mensaje «No puedo entrar y la pantalla falla» fue clasificado como BUG por las reglas y ACCESS por el modelo, mostrando una ambigüedad real. Estos resultados son observaciones de la ejecución, no garantías de exactitud. La salida JSON se genera localmente en `artifacts/comparison.json` y debe adjuntarse o conservarse como evidencia.
