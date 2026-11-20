@@ -4,6 +4,7 @@ import os
 from pydantic import ValidationError
 from google import genai
 from google.genai import types, errors
+import httpx
 
 from .models import AnalyzeRequest, AnalyzeResponse, Category, Mode, Priority
 from .traditional import KEYWORDS, _contains, _normalize
@@ -66,6 +67,47 @@ def classify_generative(
     if not selected_model or not selected_model.strip():
         raise GenerativeConfigurationError("Configura GEMINI_MODEL con un modelo disponible.")
 
+    provider = os.getenv("GENERATIVE_PROVIDER", "groq").strip().lower()
+    if provider not in ("groq", "gemini"):
+        raise GenerativeConfigurationError("GENERATIVE_PROVIDER debe ser groq o gemini.")
+    if provider == "groq" and client is None:
+        key = os.getenv("GROQ_API_KEY")
+        if not key:
+            raise GenerativeConfigurationError("Configura GROQ_API_KEY en tu entorno.")
+        try:
+            response = httpx.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {key}"},
+                json={
+                    "model": selected_model,
+                    "messages": [
+                        {"role": "system", "content": SYSTEM_INSTRUCTION},
+                        {"role": "user", "content": request.message},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                },
+                timeout=30.0,
+            )
+            if response.status_code != 200:
+                raise GenerativeUnavailableError(
+                    f"Groq rechazó la solicitud (HTTP {response.status_code}). "
+                    "Revisa el modelo, permisos y cuota en Groq Console."
+                )
+            payload = response.json()
+            result = AnalyzeResponse.model_validate_json(
+                payload["choices"][0]["message"]["content"]
+            )
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError, ValidationError) as exc:
+            raise GenerativeUnavailableError(
+                "Groq no respondió correctamente o devolvió un JSON inválido."
+            ) from None
+    else:
+        result = _classify_gemini(request, selected_model, client)
+    return _apply_security_rules(request.message, result)
+
+
+def _classify_gemini(request: AnalyzeRequest, selected_model: str, client):
     if client is None:
         key = os.getenv("GEMINI_API_KEY")
         if not key:
@@ -111,12 +153,16 @@ def classify_generative(
     except Exception as exc:
         raise GenerativeUnavailableError("No se pudo completar la consulta a Gemini.") from exc
 
+    return result
+
+
+def _apply_security_rules(message: str, result: AnalyzeResponse) -> AnalyzeResponse:
     if result.mode != Mode.generative:
         raise GenerativeUnavailableError("Gemini devolvió un modo incorrecto.")
 
     # Protección conservadora: una señal de seguridad explícita nunca se
     # rebaja a una categoría no relacionada con seguridad.
-    if _security_signal(request.message):
+    if _security_signal(message):
         result = result.model_copy(
             update={
                 "category": Category.SECURITY,
