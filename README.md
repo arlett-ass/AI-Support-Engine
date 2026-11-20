@@ -1,5 +1,12 @@
 # AI Support Engine
 
+## Integrantes
+
+- Angelica Arlett Santiago Serrano
+- Nicolás David Juarez Mendoza
+- Victor Manual Jimenez Suarez
+
+
 Prototipo académico de clasificación de tickets de soporte con dos modos: **traditional** (reglas deterministas) y **generative** (modelo de lenguaje por API). No necesita base de datos, GPU ni interfaz web.
 
 ## Instalación en Linux
@@ -49,12 +56,20 @@ Cambiar `mode` a `generative` para usar Groq. El resultado incluye `category`, `
 python scripts/compare_engines.py
 ```
 
-Se genera `artifacts/comparison.json` con **11 casos sintéticos**, incluidos ambigüedad y dos intentos de inyección. La comparación registra resultados y errores reales sin simular llamadas exitosas. Se recomienda capturar la salida de `pytest`, una consulta de cada modo y el archivo JSON. No ejecutar con mensajes privados o secretos.
+Se generan **`artifacts/comparison.json` y `artifacts/comparison.md`** con 11 casos sintéticos: 8 normales, 1 ambiguo y 2 adversariales. Cada caso tiene categoría y prioridad de referencia definidas antes de consultar los motores; para ambos se registra categoría, prioridad, si el JSON es válido y si la categoría y la prioridad coinciden con la referencia. Se calcula automáticamente el porcentaje de categorías correctas de cada motor (aciertos/11 × 100), además del porcentaje de prioridades correctas. Un error de proveedor cuenta como respuesta no correcta; nunca se sustituye por una respuesta inventada. La tabla y los porcentajes medidos se encuentran en **`artifacts/comparison.md`**, generado después de la ejecución real. No ejecutar con mensajes privados ni secretos.
+
+**Nota sobre la ambigüedad:** «No puedo entrar y la pantalla falla» tiene referencia BUG porque reporta una falla de pantalla, aunque ACCESS también es razonable. Por eso, la comparación no demuestra precisión general ni un ganador universal.
+
+**Evidencia de ejecución:** guardar captura de `python -m pytest -v`, de `python scripts/compare_engines.py`, de una respuesta HTTP tradicional y otra generativa en `http://127.0.0.1:8000/docs`; conservar `artifacts/comparison.json` y `artifacts/comparison.md`. Las capturas deben corresponder a ejecuciones reales.
 
 ## Límites
 
 El motor tradicional depende de palabras clave. El generativo depende de la disponibilidad, cuotas y comportamiento del proveedor. La protección contra inyección y la detección de seguridad son parciales: los incidentes explícitos requieren revisión humana, pero no hay garantía de identificar todos los riesgos.
 
-## Conclusión
+## Conclusión técnica (menos de 150 palabras)
 
-El motor tradicional permite clasificar solicitudes frecuentes de manera rápida, consistente y sin depender de internet. El generativo ofrece respuestas más flexibles y puede interpretar mensajes variados, pero depende de un proveedor externo y de sus límites de acceso. La comparación utiliza casos sintéticos reproducibles para observar diferencias, sin presentar esas observaciones como una medición definitiva de precisión. Los incidentes de seguridad y los mensajes ambiguos requieren especial cuidado y revisión humana. La validación de entrada, el formato JSON y las pruebas automatizadas ayudan a mantener el contrato de la API; aun así, el prototipo no sustituye a un sistema de soporte supervisado.
+En los casos observados, ambos motores clasificaron de la misma forma 10 de las 11 solicitudes; la diferencia apareció en un mensaje ambiguo. Esto no significa que los dos tengan el mismo porcentaje de aciertos en todas las situaciones: para decidir cuál funcionó mejor se deben consultar los porcentajes calculados en `artifacts/comparison.md`, usando las categorías de referencia. El motor tradicional es predecible, funciona sin internet y responde rápidamente, pero depende de frases conocidas. El generativo puede comprender mensajes variados y redactar respuestas más contextuales, aunque requiere conexión y depende del proveedor. Con una muestra tan pequeña no se puede afirmar que uno sea mejor en general. En incidentes de seguridad se mantiene la revisión humana.
+
+## Evidencia final de pruebas
+
+En la ejecución reportada por el equipo: **55 pruebas aprobadas**, **1 advertencia de deprecación de Starlette** y **11 casos de comparación ejecutados**. La advertencia no representa una prueba fallida. En la comparación reportada, los dos motores coincidieron en la categoría de 10 de los 11 mensajes; el mensaje «No puedo entrar y la pantalla falla» fue clasificado como BUG por las reglas y ACCESS por el modelo, mostrando una ambigüedad real. Estos resultados son observaciones de la ejecución, no garantías de exactitud. La salida JSON se genera localmente en `artifacts/comparison.json` y debe adjuntarse o conservarse como evidencia.
