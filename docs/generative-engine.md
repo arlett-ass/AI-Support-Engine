@@ -55,3 +55,7 @@ ni incidentes confidenciales a la API en esta actividad.
 
 La comparación entre motores y el endpoint HTTP se implementarán en ramas
 posteriores.
+
+## Acceso denegado por el proyecto (HTTP 403)
+
+Si Google devuelve `The Gemini API free tier is not available for this project`, la solicitud llegó al proveedor, pero **ese proyecto no puede usar el nivel gratuito**. No es un error del esquema JSON y no se arregla cambiando únicamente el nombre del modelo. Revisar el proyecto y la disponibilidad en Google AI Studio; una clave de otro proyecto elegible podría funcionar, pero no está garantizado. No habilitar facturación sin autorización explícita. Registrar la integración real como **bloqueada por proveedor**, nunca como prueba exitosa. El programa muestra un mensaje de error sin revelar detalles de la cuenta.
