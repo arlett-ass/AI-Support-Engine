@@ -10,7 +10,7 @@ from ai_support_engine.generative import (
     GenerativeUnavailableError,
     classify_generative,
 )
-from ai_support_engine.models import Category, Mode
+from ai_support_engine.models import Category, Mode, Priority
 
 
 class FakeModels:
@@ -52,6 +52,7 @@ def test_security_cannot_be_downgraded_by_model():
     client = fake_client(category="FEATURE", requiresHumanReview=False)
     result = classify_generative("Recibí un correo de phishing", client=client, model="test-model")
     assert result.category == Category.SECURITY
+    assert result.priority == Priority.HIGH
     assert result.requiresHumanReview is True
 
 
