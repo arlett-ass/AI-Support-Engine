@@ -46,6 +46,12 @@ def test_valid_gemini_response():
     assert result.mode == Mode.generative
     assert client.models.calls[0]["model"] == "test-model"
     assert client.models.calls[0]["contents"] == "No puedo iniciar sesión"
+    config = client.models.calls[0]["config"]
+    assert config.response_schema is None
+    assert config.response_json_schema["required"] == [
+        "category", "priority", "response", "requiresHumanReview", "mode"
+    ]
+    assert "additionalProperties" not in str(config.response_json_schema)
 
 
 def test_security_cannot_be_downgraded_by_model():
