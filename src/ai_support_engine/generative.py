@@ -3,7 +3,7 @@
 import os
 from pydantic import ValidationError
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 
 from .models import AnalyzeRequest, AnalyzeResponse, Category, Mode, Priority
 from .traditional import KEYWORDS, _contains, _normalize
@@ -86,6 +86,24 @@ def classify_generative(
         if not completion.text:
             raise GenerativeUnavailableError("Gemini no devolvió contenido válido.")
         result = AnalyzeResponse.model_validate_json(completion.text)
+    except errors.ClientError as exc:
+        if exc.code == 403:
+            raise GenerativeUnavailableError(
+                "Google rechazó el acceso (403). Revisa en AI Studio si el "
+                "proyecto tiene acceso a Gemini API; la cuota gratuita puede "
+                "no estar disponible. No es un fallo de la clave ni del JSON."
+            ) from None
+        if exc.code == 429:
+            raise GenerativeUnavailableError(
+                "Gemini rechazó la solicitud por cuota o límite de uso (429)."
+            ) from None
+        if exc.code in (400, 404):
+            raise GenerativeUnavailableError(
+                f"Gemini rechazó la configuración o el modelo (HTTP {exc.code})."
+            ) from None
+        raise GenerativeUnavailableError(
+            f"Gemini rechazó la solicitud (HTTP {exc.code})."
+        ) from None
     except (ValidationError, ValueError) as exc:
         raise GenerativeUnavailableError("La respuesta de Gemini no cumple el contrato.") from exc
     except GenerativeUnavailableError:
