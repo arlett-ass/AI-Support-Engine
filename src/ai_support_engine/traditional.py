@@ -9,7 +9,7 @@ KEYWORDS: dict[Category, tuple[str, ...]] = {
     Category.SECURITY: (
         "phishing", "suplantacion", "robo de cuenta", "acceso no autorizado",
         "actividad sospechosa", "cuenta comprometida", "datos filtrados",
-        "filtracion", "malware", "virus", "hackeo", "hackeada",
+        "filtracion", "se filtraron datos", "datos expuestos", "fuga de datos", "malware", "virus", "hackeo", "hackeada",
         "contrasena robada", "brecha de seguridad", "fraude",
     ),
     Category.ACCESS: (
@@ -29,7 +29,7 @@ KEYWORDS: dict[Category, tuple[str, ...]] = {
 }
 
 CRITICAL_TERMS = (
-    "datos filtrados", "filtracion", "cuenta comprometida",
+    "datos filtrados", "filtracion", "se filtraron datos", "datos expuestos", "fuga de datos", "cuenta comprometida",
     "contrasena robada", "brecha de seguridad", "robo de cuenta",
 )
 HIGH_TERMS = (
