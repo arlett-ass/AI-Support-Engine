@@ -13,6 +13,11 @@ from ai_support_engine.generative import (
 from ai_support_engine.models import Category, Mode, Priority
 
 
+@pytest.fixture(autouse=True)
+def use_gemini_for_existing_tests(monkeypatch):
+    monkeypatch.setenv("GENERATIVE_PROVIDER", "gemini")
+
+
 class FakeModels:
     def __init__(self, text=None, error=None):
         self.text = text
