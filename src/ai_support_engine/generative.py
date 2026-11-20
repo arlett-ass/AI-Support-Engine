@@ -7,7 +7,7 @@ from google.genai import types, errors
 import httpx
 
 from .models import AnalyzeRequest, AnalyzeResponse, Category, Mode, Priority
-from .traditional import KEYWORDS, _contains, _normalize
+from .traditional import KEYWORDS, CRITICAL_TERMS, RESPONSES, _contains, _normalize
 
 
 class GenerativeConfigurationError(RuntimeError):
@@ -165,11 +165,14 @@ def _apply_security_rules(message: str, result: AnalyzeResponse) -> AnalyzeRespo
     # Protección conservadora: una señal de seguridad explícita nunca se
     # rebaja a una categoría no relacionada con seguridad.
     if _security_signal(message):
+        normalized = _normalize(message)
+        critical = any(_contains(normalized, term) for term in CRITICAL_TERMS)
         result = result.model_copy(
             update={
                 "category": Category.SECURITY,
                 "requiresHumanReview": True,
-                "priority": (Priority.CRITICAL if result.priority == Priority.CRITICAL else Priority.HIGH),
+                "priority": (Priority.CRITICAL if critical or result.priority == Priority.CRITICAL else Priority.HIGH),
+                "response": RESPONSES[Category.SECURITY],
             }
         )
     elif result.category == Category.SECURITY:
