@@ -1,13 +1,11 @@
 """Clasificación generativa mediante Google Gemini; nunca simula respuestas de IA."""
 
 import os
-import re
-
 from pydantic import ValidationError
 from google import genai
 from google.genai import types
 
-from .models import AnalyzeRequest, AnalyzeResponse, Category, Mode
+from .models import AnalyzeRequest, AnalyzeResponse, Category, Mode, Priority
 from .traditional import KEYWORDS, _contains, _normalize
 
 
@@ -90,6 +88,7 @@ def classify_generative(
             update={
                 "category": Category.SECURITY,
                 "requiresHumanReview": True,
+                "priority": (Priority.CRITICAL if result.priority == Priority.CRITICAL else Priority.HIGH),
             }
         )
     elif result.category == Category.SECURITY:
